@@ -1,10 +1,13 @@
-TCP HTTP CLIENT
+JDB - JSON Database
 ----
 
-**09/05/2017**
+**19/04/2017**
 
 **Info**
- - Add new base code. some error might be happened. 
+ - Build Database using JSON is very easy. no latency.
+ - JDB is library for Python 2.7 for now
+ - One Line datastore. 
 
-Able to do http post, get, etc
+with feature improvement like add, remove, delete, etc
+info will be on the example
 
