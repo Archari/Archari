@@ -1,64 +1,216 @@
-LINE
-----
+line-bot-sdk-php
+==
 
-[![Join the chat at https://gitter.im/carpedm20/LINE](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/carpedm20/LINE?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://travis-ci.org/line/line-bot-sdk-php.svg?branch=master)](https://travis-ci.org/line/line-bot-sdk-php)
 
-- Documentation : [http://carpedm20.github.io/line/](http://carpedm20.github.io/line/)
-- Developer Mailing List: [Google Group](https://groups.google.com/forum/#!forum/line-python-developer)
+SDK of the LINE Messaging API for PHP.
 
-** This is fork from carpedm20 LINE lib and modificated by [Me](https://github.com/anysz/LINE/) **
+About the LINE Messaging API
+--
 
+See the official API documentation for more information.
 
-Update
-------
+English: [https://devdocs.line.me/en/](https://devdocs.line.me/en/)<br>
+Japanese: [https://devdocs.line.me/ja/](https://devdocs.line.me/ja/)
 
-**2015.05.28**
+Installation
+--
 
-`sendImage` and `sendImageWithURL` is fixed.
+Install the LINE Messaging API SDK using [Composer](https://getcomposer.org/).
 
-To send an Image:
+```
+$ composer require linecorp/line-bot-sdk
+```
 
-    >>> contact = client.contacts[0]
-    >>> contact.sendImage('./image.jpg')
+Getting started
+--
 
-Or use:
+### Create the bot client instance
 
-    >>> contact = client.contacts[0]
-    >>> contact.sendImageWithURL('https://avatars3.githubusercontent.com/u/3346407?v=3&s=460')
+The bot client instance is a handler of the Messaging API.
 
+```php
+$httpClient = new \LINE\LINEBot\HTTPClient\CurlHTTPClient('<channel access token>');
+$bot = new \LINE\LINEBot($httpClient, ['channelSecret' => '<channel secret>']);
+```
 
-**2015.03.31**
+The constructor of the bot client requires an instance of `HTTPClient`.
+This library provides `CurlHTTPClient` by default.
 
-authToken expiration [issue](https://github.com/carpedm20/LINE/issues/9) solved.
+### Call API
 
-update authToken **automatically**:
+You can call an API through the bot client instance.
 
-    $ pip install line --upgrade
+A very simple example:
 
-There is nothing to change in your original code.
+```php
+$response = $bot->replyText('<reply token>', 'hello!');
+```
 
-update authToken **manually**:
+This procedure sends a message to the destination that is associated with `<reply token>`.
 
-    $ pip install line --upgrade
-    $ python
-    >>> from line import LineClient, LineGroup, LineContact
-    >>> client = LineClient("ID", "PASSWORD")
-    >>> client.updateAuthToken() # manual update
-    True
+A more advanced example:
 
+```php
+$textMessageBuilder = new \LINE\LINEBot\MessageBuilder\TextMessageBuilder('hello');
+$response = $bot->replyMessage('<reply token>', $textMessageBuilder);
+if ($response->isSucceeded()) {
+    echo 'Succeeded!';
+    return;
+}
 
-**2014.08.08**
+// Failed
+echo $response->getHTTPStatus . ' ' . $response->getRawBody();
+```
 
-Some codes are removed because of the request of LINE corporation. You can use library only with `authToken` login.
+`LINEBot#replyMessage()` takes the reply token and `MessageBuilder`.
+The method sends a message that is built by `MessageBuilder` to the destination.
 
+Components
+--
 
-Screenshot
-----------
+### MessageBuilder
 
-![alt_tag](http://3.bp.blogspot.com/-FX3ONLEKBBY/U9xJD8JkJbI/AAAAAAAAF2Q/1E7VXOkvYAI/s1600/%E1%84%89%E1%85%B3%E1%84%8F%E1%85%B3%E1%84%85%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A3%E1%86%BA+2014-08-02+%E1%84%8B%E1%85%A9%E1%84%8C%E1%85%A5%E1%86%AB+10.47.15.png)
+The type of message that is sent depends on the type of instance of `MessageBuilder`.
+For example, the method sends a text message if you pass `TextMessageBuilder` and it sends an image message if you pass `ImageMessageBuilder`.
 
+For more detailed information on `MessageBuilder`, see `\LINE\LINEBot\MessageBuilder` and the namespace.
 
-Author
-------
+Other methods that take `MessageBuilder` behave in the same way.
 
-Taehoon Kim / [@carpedm20](http://carpedm20.github.io/about/)
+### Response
+
+Methods that call API returns `Response`. Response has three methods;
+
+- `Response#isSucceeded()`
+- `Response#getHTTPStatus()`
+- `Response#getRawBody()`
+- `Response#getJSONDecodedBody()`
+- `Response#getHeader($name)`
+- `Response#getHeaders()`
+
+You can use these methods to check the response status and take response body.
+
+#### `Response#isSucceeded()`
+
+Returns a Boolean value. The return value represents whether the request succeeded or not.
+
+#### `Response#getHTTPStatus()`
+
+Returns the HTTP status code of a response.
+
+#### `Response#getRawBody()`
+
+Returns the body of the response as raw data (a byte string).
+
+#### `Response#getJSONDecodedBody()`
+
+Returns the body that is decoded in JSON. This body is an array.
+
+#### `Response#getHeader($name)`
+
+This method returns a response header string, or null if the response does not have a header of that name.
+
+#### `Response#getHeaders()`
+
+This method returns all of the response headers as string array.
+
+### Webhook
+
+LINE's server sends user actions (such as a message, image, or location) to your bot server.
+Request of that contains event(s); event is action of the user.
+
+The following shows how the webhook is handled:
+
+1. Receive webhook from LINE's server.
+2. Parse request payload by `LINEBot#parseEventRequest($body, $signature)`.
+3. Iterate parsed events and some react as you like.
+
+The following examples show how webhooks are handled:
+
+- [EchoBot: Route.php](/examples/EchoBot/src/LINEBot/EchoBot/Route.php)
+- [KitchenSink: Route.php](/examples/KitchenSink/src/LINEBot/KitchenSink/Route.php)
+
+More information
+--
+
+For more information, see the [official API documents](#about-the-line-messaging-api) and PHPDoc.
+If it's your first time using this library, we recommend taking a look at `examples` and the PHPDoc of `\LINE\LINEBot`.
+
+Hints
+--
+
+### Examples
+
+This repository contains two examples of how to use the LINE Messaging API.
+
+#### [EchoBot](/examples/EchoBot)
+
+A simple sample implementation. This application reacts to text messages that are sent from users.
+
+#### [KitchenSink](/examples/KitchenSink)
+
+A full-stack (and slightly complex) sample implementation. This application demonstrates a practical use of the LINE Messaging API.
+
+### PHPDoc
+
+[https://line.github.io/line-bot-sdk-php/](https://line.github.io/line-bot-sdk-php/)
+
+This library provides PHPDoc to describe how to use the methods. You can generate the documentation using [apigen](http://www.apigen.org/) using the following command.
+
+```
+$ make doc
+```
+
+The HTML files are generated in `docs/`.
+
+### Official API documentation
+
+[Official API documents](#about-the-line-messaging-api) shows the detail of  Messaging API and fundamental usage of SDK.
+
+Notes
+--
+
+### How to switch the HTTP client implementation
+
+1. Implement `\LINE\LINEBot\HTTPClient`
+2. Pass the implementation to the constructor of `\LINE\LINEBot`
+
+Please refer [CurlHTTPClient](/src/LINEBot/HTTPClient/CurlHTTPClient.php) that is the default HTTP client implementation.
+
+Requirements
+--
+
+- PHP 5.4 or later
+
+For SDK developers
+--
+
+Please refer [HACKING.md](/HACKING.md).
+
+See also
+--
+
+### [line-bot-sdk-tiny](./line-bot-sdk-tiny)
+
+A very simple SDK (subset) for the LINE Messaging API for PHP.
+line-bot-sdk-tiny provides a simple interface and functions which makes it a good way to learn how to use the LINE Messaging API.
+
+License
+--
+
+```
+Copyright 2016 LINE Corporation
+
+LINE Corporation licenses this file to you under the Apache License,
+version 2.0 (the "License"); you may not use this file except in compliance
+with the License. You may obtain a copy of the License at:
+
+  https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations
+under the License.
+```
